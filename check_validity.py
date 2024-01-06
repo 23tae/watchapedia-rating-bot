@@ -1,22 +1,21 @@
 import os
 
 
-def is_arg_valid(arg: str) -> bool:
-    if len(arg) != 2:
-        return False
-    rating = arg[1]
-    arg_len = len(rating)
-    if arg_len == 1:
-        if rating >= '1' and rating <= '5':
-            return True
-    elif arg_len == 3 and rating[1] == '.':
-        if rating[2] == '0':
-            if rating[0] >= '1' and rating[0] <= '5':
-                return True
-        elif rating[2] == '5':
-            if rating[0] >= '0' and rating[0] <= '4':
-                return True
-    return False
+def get_rating(arg: str) -> str:
+    if len(arg) == 2:
+        rating = arg[1]
+        arg_len = len(rating)
+        if arg_len == 1:
+            if rating >= '1' and rating <= '5':
+                return rating + '.0'
+        elif arg_len == 3 and rating[1] == '.':
+            if rating[2] == '0':
+                if rating[0] >= '1' and rating[0] <= '5':
+                    return rating
+            elif rating[2] == '5':
+                if rating[0] >= '0' and rating[0] <= '4':
+                    return rating
+    raise Exception()
 
 
 def delete_previous_file(file_path) -> bool:
