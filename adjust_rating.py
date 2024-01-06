@@ -15,11 +15,11 @@ import ssl
 import os
 
 
-def run_webdriver(my_account: dict):
+def run_webdriver(my_account: dict):  # TODO: 평점 인자 받아서 사용
     driver = set_options()
     move_main_page(my_account, driver)
-    move_rating_page(driver)
-    if save_movie_urls(driver) is True:
+    total_movies = move_rating_page(driver)
+    if save_movie_urls(driver, total_movies) is True:
         adjust_rating(driver)
     driver.quit()
 
@@ -74,7 +74,7 @@ def move_main_page(my_account: dict, driver: webdriver):
     driver.implicitly_wait(5)
 
 
-def move_rating_page(driver: webdriver):
+def move_rating_page(driver: webdriver) -> int:
     wait = WebDriverWait(driver, 3)
     try:
         intercepting_div = wait.until(EC.visibility_of_element_located(
@@ -95,16 +95,24 @@ def move_rating_page(driver: webdriver):
     driver.find_element(
         By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div/div/section[1]/div/div[3]/a[1]/span[2]').click()
 
+    # 평가한 영화 개수 확인
+    value_span = wait.until(EC.presence_of_element_located(
+        (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]/a/h2/span')))
+    value = value_span.text
+    total_movies = int(value)
+
     # 영화 페이지 클릭
     driver.find_element(
         By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]').click()
+
+    return total_movies
 
 
 def scroll_to_bottom(driver):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-def save_movie_urls(driver: webdriver) -> bool:
+def save_movie_urls(driver: webdriver, total_movies: int) -> bool:
 
     output_file = "movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
 
@@ -112,36 +120,25 @@ def save_movie_urls(driver: webdriver) -> bool:
         return False
     try:
         with open(output_file, 'a') as file:
-            i = 1
-            while True:
+            for i in range(1, total_movies + 1):
                 xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
-
                 try:
                     rating_element = WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((By.XPATH, xpath))
                     )
                     rating_text = rating_element.text
-
                     movie_url_element = driver.find_element(
                         By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a')
                     movie_url = movie_url_element.get_attribute('href')
-
                     if '평가함 ★ 3.0' not in rating_text:
                         file.write(movie_url + '\n')
-
-                    last_processed_index = i
                     i += 1
 
                 except StaleElementReferenceException:
                     continue
 
-                # TODO: 끝까지 확인한 뒤 종료하도록 수정
-                if last_processed_index is not None and i == last_processed_index:
-                    break
-
                 scroll_to_bottom(driver)
                 driver.implicitly_wait(5)
-
         return True
 
     except Exception as e:
