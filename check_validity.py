@@ -15,6 +15,7 @@ def get_rating(arg: str) -> str:
             elif rating[2] == '5':
                 if '0' <= rating[0] <= '4':
                     return rating
+    print('Usage: python3 main.py <rating>\n(rating: 0.5 ~ 5.0 (0.5단위))')
     raise Exception()
 
 
