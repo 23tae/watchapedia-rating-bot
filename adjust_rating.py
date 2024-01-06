@@ -20,8 +20,7 @@ def run_webdriver(my_account: dict, rating: str):  # TODO: 평점 인자 받아�
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
     if save_movie_urls(driver, total_movies, rating) is True:
-        return
-        adjust_rating(driver)
+        adjust_rating(driver, rating)
     driver.quit()
 
 
@@ -119,7 +118,7 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
 
     if check_validity.delete_previous_file(output_file) is False:
-        return False
+        return True
     try:
         with open(output_file, 'a') as file:
             for i in range(1, total_movies + 1):
@@ -148,10 +147,29 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
         return False
 
 
-def adjust_rating(driver: webdriver):
+def get_class_name(rating: str) -> str:
+    class_name_file = open('class_for_rating.txt', 'r')
+    class_names = class_name_file.readlines()
+    converted_rating = int(float(rating) * 2)
+    class_name = class_names[converted_rating - 1].rstrip('\n')
+    return class_name
+
+
+def adjust_rating(driver: webdriver, rating: str):
+
+    target_rating_class = get_class_name(rating)
+
     with open('movie_urls.txt', 'r') as file:
         movie_urls = file.readlines()
 
     for movie_url in movie_urls:
         driver.get(movie_url)
-        driver.implicitly_wait(5)
+        wait = WebDriverWait(driver, 10)
+
+        # 해당 별점이 클릭 가능할 때까지 대기한 후 클릭
+        star_xpath = f'//div[@class="{target_rating_class}"]'
+        star_element = wait.until(
+            EC.element_to_be_clickable((By.XPATH, star_xpath)))
+        star_element.click()
+
+        driver.implicitly_wait(2)
