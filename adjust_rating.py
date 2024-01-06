@@ -15,11 +15,12 @@ import ssl
 import os
 
 
-def run_webdriver(my_account: dict):  # TODO: 평점 인자 받아서 사용
+def run_webdriver(my_account: dict, rating: str):  # TODO: 평점 인자 받아서 사용
     driver = set_options()
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
-    if save_movie_urls(driver, total_movies) is True:
+    if save_movie_urls(driver, total_movies, rating) is True:
+        return
         adjust_rating(driver)
     driver.quit()
 
@@ -112,9 +113,10 @@ def scroll_to_bottom(driver):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-def save_movie_urls(driver: webdriver, total_movies: int) -> bool:
+def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
 
     output_file = "movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+    skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
 
     if check_validity.delete_previous_file(output_file) is False:
         return False
@@ -130,7 +132,7 @@ def save_movie_urls(driver: webdriver, total_movies: int) -> bool:
                     movie_url_element = driver.find_element(
                         By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a')
                     movie_url = movie_url_element.get_attribute('href')
-                    if '평가함 ★ 3.0' not in rating_text:
+                    if skip_value not in rating_text:
                         file.write(movie_url + '\n')
                     i += 1
 
