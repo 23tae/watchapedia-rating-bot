@@ -1,3 +1,5 @@
+import check_validity
+
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 from selenium import webdriver
@@ -8,7 +10,6 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
-
 import urllib.request
 import ssl
 import os
@@ -21,25 +22,6 @@ def run_webdriver(my_account: dict):
     if save_movie_urls(driver) is True:
         adjust_rating(driver)
     driver.quit()
-
-
-def delete_previous_file(file_path) -> bool:
-    try:
-        if os.path.exists(file_path):
-            user_input = input(
-                f"파일 {file_path}이(가) 존재합니다. 삭제하시겠습니까? (y/N): ").lower()
-
-            if user_input == 'y':
-                os.remove(file_path)
-                print(f"파일 {file_path}이(가) 삭제되었습니다.")
-                return True
-            else:
-                print("삭제를 취소했습니다.")
-                return False
-        else:
-            return True
-    except Exception as e:
-        print(f"Error: {e}")
 
 
 def set_options():
@@ -126,7 +108,7 @@ def save_movie_urls(driver: webdriver) -> bool:
 
     output_file = "movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
 
-    if delete_previous_file(output_file) is False:
+    if check_validity.delete_previous_file(output_file) is False:
         return False
     try:
         with open(output_file, 'a') as file:
