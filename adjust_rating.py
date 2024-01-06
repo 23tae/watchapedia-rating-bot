@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
+
 import urllib.request
 import ssl
 import os
@@ -16,6 +18,7 @@ def run_webdriver(my_account: dict):
     driver = set_options()
     move_main_page(my_account, driver)
     move_rating_page(driver)
+    iterate_movie_list(driver)
 
     # driver.quit()
 
@@ -94,3 +97,31 @@ def move_rating_page(driver: webdriver):
     # 영화 페이지 클릭
     driver.find_element(
         By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]').click()
+
+
+def scroll_to_bottom(driver):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+
+def iterate_movie_list(driver: webdriver):
+    output_file = "movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+
+    while True:
+        list_items = driver.find_elements(
+            By.XPATH, '//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li')
+
+        for li in list_items:
+            try:
+                rating_element = li.find_element(By.XPATH, './a/div[2]/div[2]')
+                rating_text = rating_element.text
+                movie_url = li.find_element(
+                    By.XPATH, './a').get_attribute('href')
+                if '평가함 ★ 4.0' in rating_text:
+                    with open(output_file, 'a') as file:
+                        file.write(movie_url + '\n')
+            except StaleElementReferenceException:
+                continue
+
+        scroll_to_bottom(driver)
+
+        driver.implicitly_wait(5)
