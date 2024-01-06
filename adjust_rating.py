@@ -15,6 +15,7 @@ import os
 def run_webdriver(my_account: dict):
     driver = set_options()
     move_main_page(my_account, driver)
+    move_rating_page(driver)
 
     # driver.quit()
 
@@ -67,3 +68,29 @@ def move_main_page(my_account: dict, driver: webdriver):
     login_pwd.send_keys(my_account['password'])
     login_id.send_keys(Keys.ENTER)
     driver.implicitly_wait(10)
+
+
+def move_rating_page(driver: webdriver):
+    wait = WebDriverWait(driver, 10)
+    try:
+        intercepting_div = wait.until(EC.visibility_of_element_located(
+            (By.CSS_SELECTOR, 'div.css-1bbirrh.e1npj76i6')))
+
+        close_button = driver.find_element(
+            By.CSS_SELECTOR, 'span.css-69ff8n.e1npj76i0')
+        close_button.click()
+    except:
+        pass
+
+    # 프로필 버튼 클릭
+    profile_button = wait.until(EC.element_to_be_clickable(
+        (By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[9]/a/div/div')))
+    profile_button.click()
+
+    # 평가 페이지 클릭
+    driver.find_element(
+        By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div/div/section[1]/div/div[3]/a[1]/span[2]').click()
+
+    # 영화 페이지 클릭
+    driver.find_element(
+        By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]').click()
