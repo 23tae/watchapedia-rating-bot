@@ -5,5 +5,6 @@
 .env
 __pycache__/
 
-movie_urls.txt
 test.*
+test/
+data/
