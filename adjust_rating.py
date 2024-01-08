@@ -1,4 +1,5 @@
 import check_validity
+import utils
 
 from webdriver_manager.chrome import ChromeDriverManager
 import time
@@ -12,7 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
 import urllib.request
 import ssl
-import os
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 def run_webdriver(my_account: dict, rating: str):  # TODO: 평점 인자 받아서 사용
@@ -42,30 +44,24 @@ def set_options():
 def move_main_page(my_account: dict, driver: webdriver):
     # 페이지 이동
     driver.get("https://pedia.watcha.com/ko-KR/")
-    # 왓챠피디아 로그인
 
-    # 로그인 버튼이 클릭 가능할 때까지 대기
     wait = WebDriverWait(driver, 10)
 
-    # div가 존재하는지 확인
-    try:
-        intercepting_div = wait.until(EC.visibility_of_element_located(
-            (By.CSS_SELECTOR, 'div.css-1bbirrh.e1npj76i6')))
-
-        # div가 존재하면 닫기 클릭
+    # div가 존재하면 닫기 버튼 클릭
+    intercepting_div = driver.find_elements(
+        By.CSS_SELECTOR, 'div.css-1bbirrh.e1npj76i6')
+    if len(intercepting_div) > 0:
         close_button = driver.find_element(
             By.CSS_SELECTOR, 'span.css-69ff8n.e1npj76i0')
         close_button.click()
-    except:
-        # div가 존재하지 않는 경우
-        pass
 
     login_button = wait.until(EC.element_to_be_clickable(
         (By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[7]/button')))
 
     login_button.click()
+    driver.implicitly_wait(5)
 
-    driver.implicitly_wait(10)
+    # 왓챠피디아 로그인
     login_id = driver.find_element(By.CSS_SELECTOR, 'input[name="email"]')
     login_id.send_keys(my_account['username'])
     login_pwd = driver.find_element(By.CSS_SELECTOR, 'input[name="password"]')
@@ -75,16 +71,15 @@ def move_main_page(my_account: dict, driver: webdriver):
 
 
 def move_rating_page(driver: webdriver) -> int:
-    wait = WebDriverWait(driver, 3)
-    try:
-        intercepting_div = wait.until(EC.visibility_of_element_located(
-            (By.CSS_SELECTOR, 'div.css-1bbirrh.e1npj76i6')))
+    wait = WebDriverWait(driver, 5)
 
+    intercepting_div = driver.find_elements(
+        By.CSS_SELECTOR, 'div.css-1bbirrh.e1npj76i6')
+
+    if len(intercepting_div) > 0:
         close_button = driver.find_element(
             By.CSS_SELECTOR, 'span.css-69ff8n.e1npj76i0')
         close_button.click()
-    except:
-        pass
 
     # 프로필 버튼 클릭
     profile_button = wait.until(EC.element_to_be_clickable(
@@ -114,7 +109,7 @@ def scroll_to_bottom(driver):
 
 def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
 
-    output_file = "movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+    output_file = utils.movie_urls_filename  # 별점 조정할 영화의 url을 저장할 파일
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
 
     if check_validity.delete_previous_file(output_file) is False:
@@ -147,19 +142,11 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
         return False
 
 
-def get_class_name(rating: str) -> str:
-    class_name_file = open('class_for_rating.txt', 'r')
-    class_names = class_name_file.readlines()
-    converted_rating = int(float(rating) * 2)
-    class_name = class_names[converted_rating - 1].rstrip('\n')
-    return class_name
-
-
 def adjust_rating(driver: webdriver, rating: str):
 
-    target_rating_class = get_class_name(rating)
+    target_rating_class = utils.get_target_class_name(rating)
 
-    with open('movie_urls.txt', 'r') as file:
+    with open(utils.movie_urls_filename, 'r') as file:
         movie_urls = file.readlines()
 
     for movie_url in movie_urls:
