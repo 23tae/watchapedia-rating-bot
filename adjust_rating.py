@@ -114,6 +114,7 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
 
     if check_validity.delete_previous_file(output_file) is False:
         return True
+    check_validity.create_dir_if_not_exists(output_file)
     try:
         with open(output_file, 'a') as file:
             for i in range(1, total_movies + 1):

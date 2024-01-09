@@ -36,3 +36,8 @@ def delete_previous_file(file_path) -> bool:
             return True
     except Exception as e:
         print(f"Error: {e}")
+
+def create_dir_if_not_exists(file_path):
+    dir_path = os.path.dirname(file_path)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
