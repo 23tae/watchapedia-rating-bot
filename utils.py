@@ -1,6 +1,6 @@
 rating_classes_filename = './data/rating_classes.txt'
 rating_words_filename = './data/rating_words.txt'
-movie_urls_filename = "./data/movie_urls.txt"
+movie_urls_filename = "./movie_urls.txt"
 
 
 def get_target_class_name(rating: str) -> str:
