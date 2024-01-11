@@ -46,7 +46,7 @@ def move_main_page(my_account: dict, driver: webdriver):
     # 페이지 이동
     driver.get("https://pedia.watcha.com/ko-KR/")
 
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 5)
 
     # div가 존재하면 닫기 버튼 클릭
     intercepting_div = driver.find_elements(
@@ -150,8 +150,19 @@ def adjust_rating(driver: webdriver, rating: str):
 
     for movie_url in movie_urls:
         driver.get(movie_url)
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 5)
 
+        # 페이지가 완전히 로드될 때까지 대기
+        wait.until(EC.presence_of_element_located(
+            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section[1]/div[2]/section[2]/div/section')
+        ))
+
+        rating_word = wait.until(EC.presence_of_element_located(
+            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section[1]/div[2]/section[1]/div[1]/div[2]/div')
+        )).text
+        current_star_class = utils.get_current_class_name(rating_word)
+        print(current_star_class)
+        continue
         # 해당 별점이 클릭 가능할 때까지 대기한 후 클릭
         star_xpath = f'//div[@class="{target_rating_class}"]'
         star_element = wait.until(
