@@ -17,7 +17,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 
 
-def run_webdriver(my_account: dict, rating: str):  # TODO: 평점 인자 받아서 사용
+def run_webdriver(my_account: dict, rating: str):
     driver = set_options()
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
@@ -38,6 +38,7 @@ def set_options():
         "excludeSwitches", ["enable-logging"])
     Service(executable_path=ChromeDriverManager().install())
     driver = webdriver.Chrome(options=chrome_options)
+    driver.implicitly_wait(5)
     return driver
 
 
@@ -59,7 +60,6 @@ def move_main_page(my_account: dict, driver: webdriver):
         (By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[7]/button')))
 
     login_button.click()
-    driver.implicitly_wait(5)
 
     # 왓챠피디아 로그인
     login_id = driver.find_element(By.CSS_SELECTOR, 'input[name="email"]')
@@ -67,7 +67,6 @@ def move_main_page(my_account: dict, driver: webdriver):
     login_pwd = driver.find_element(By.CSS_SELECTOR, 'input[name="password"]')
     login_pwd.send_keys(my_account['password'])
     login_id.send_keys(Keys.ENTER)
-    driver.implicitly_wait(5)
 
 
 def move_rating_page(driver: webdriver) -> int:
@@ -135,7 +134,6 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
                     continue
 
                 scroll_to_bottom(driver)
-                driver.implicitly_wait(5)
         return True
 
     except Exception as e:
@@ -159,5 +157,3 @@ def adjust_rating(driver: webdriver, rating: str):
         star_element = wait.until(
             EC.element_to_be_clickable((By.XPATH, star_xpath)))
         star_element.click()
-
-        driver.implicitly_wait(2)
