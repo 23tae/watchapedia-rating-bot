@@ -11,6 +11,7 @@ def get_target_class_name(rating: str) -> str:
     return class_name
 
 
+# 별점 아래의 문구를 사용해 해당 클래스명을 찾는다.
 def get_current_class_name(word: str) -> str:
     with open(rating_classes_filename, 'r') as file:
         classes = file.readlines()
@@ -18,4 +19,5 @@ def get_current_class_name(word: str) -> str:
         words = file.readlines()
     for w in words:
         if word in w:
+            # print('rating: ', (words.index(w) + 1) / 2)
             return classes[words.index(w)].rstrip('\n')
