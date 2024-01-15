@@ -38,7 +38,7 @@ def set_options():
         "excludeSwitches", ["enable-logging"])
     Service(executable_path=ChromeDriverManager().install())
     driver = webdriver.Chrome(options=chrome_options)
-    driver.implicitly_wait(5)
+    driver.implicitly_wait(2)
     return driver
 
 
@@ -154,11 +154,11 @@ def adjust_rating(driver: webdriver, rating: str):
 
         # 페이지가 완전히 로드될 때까지 대기
         wait.until(EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section[1]/div[2]/section[2]/div/section')
+            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section/div[2]/section[2]/div/section')
         ))
 
         rating_word = wait.until(EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section[1]/div[2]/section[1]/div[1]/div[2]/div')
+            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section/div[2]/section[1]/div[1]/div[2]/div')
         )).text
         current_star_class = utils.get_current_class_name(rating_word)
         print(current_star_class)
