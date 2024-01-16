@@ -16,13 +16,19 @@ import ssl
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 
+output_file = utils.movie_urls_filename  # 별점 조정할 영화의 url을 저장할 파일
+
 
 def run_webdriver(my_account: dict, rating: str):
     driver = set_options()
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
-    if save_movie_urls(driver, total_movies, rating) is True:
+    try:
+        if total_movies != -1:
+            save_movie_urls(driver, total_movies, rating)
         adjust_rating(driver, rating)
+    except Exception as e:
+        print(f"Error: {e}")
     driver.quit()
 
 
@@ -42,6 +48,7 @@ def set_options():
     return driver
 
 
+# 왓챠피디아 메인 페이지로 이동
 def move_main_page(my_account: dict, driver: webdriver):
     # 페이지 이동
     driver.get("https://pedia.watcha.com/ko-KR/")
@@ -69,7 +76,14 @@ def move_main_page(my_account: dict, driver: webdriver):
     login_id.send_keys(Keys.ENTER)
 
 
+# 평가한 영화 페이지로 이동
 def move_rating_page(driver: webdriver) -> int:
+    global output_file
+
+    if check_validity.delete_previous_file(output_file) is False:
+        return -1
+    check_validity.create_dir_if_not_exists(output_file)
+
     wait = WebDriverWait(driver, 5)
 
     intercepting_div = driver.find_elements(
@@ -106,41 +120,34 @@ def scroll_to_bottom(driver):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-def save_movie_urls(driver: webdriver, total_movies: int, rating: str) -> bool:
+# 변경할 별점을 가진 영화의 url을 파일에 저장
+def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
 
-    output_file = utils.movie_urls_filename  # 별점 조정할 영화의 url을 저장할 파일
+    global output_file
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
 
-    if check_validity.delete_previous_file(output_file) is False:
-        return True
-    check_validity.create_dir_if_not_exists(output_file)
-    try:
-        with open(output_file, 'a') as file:
-            for i in range(1, total_movies + 1):
-                xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
-                try:
-                    rating_element = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.XPATH, xpath))
-                    )
-                    rating_text = rating_element.text
-                    movie_url_element = driver.find_element(
-                        By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a')
-                    movie_url = movie_url_element.get_attribute('href')
-                    if skip_value not in rating_text:
-                        file.write(movie_url + '\n')
-                    i += 1
+    with open(output_file, 'a') as file:
+        for i in range(1, total_movies + 1):
+            xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
+            try:
+                rating_element = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.XPATH, xpath))
+                )
+                rating_text = rating_element.text
+                movie_url_element = driver.find_element(
+                    By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a')
+                movie_url = movie_url_element.get_attribute('href')
+                if skip_value not in rating_text:
+                    file.write(movie_url + '\n')
+                i += 1
 
-                except StaleElementReferenceException:
-                    continue
+            except StaleElementReferenceException:
+                continue
 
-                scroll_to_bottom(driver)
-        return True
-
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
+            scroll_to_bottom(driver)
 
 
+# 별점 조정
 def adjust_rating(driver: webdriver, rating: str):
 
     target_rating_class = utils.get_target_class_name(rating)
