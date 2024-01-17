@@ -1,4 +1,5 @@
 import check_validity
+import utils
 
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
@@ -13,12 +14,12 @@ from selenium.webdriver.common.action_chains import ActionChains
 import ssl
 
 
-def run_webdriver(my_account: dict, rating: str, is_save_url: bool):
+def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: bool):
     driver = set_options()
     move_main_page(my_account, driver)
-    total_movies = move_rating_page(driver)
+    total_contents = move_rating_page(driver, content_idx)
     if is_save_url:
-        save_movie_urls(driver, total_movies, rating)
+        save_content_urls(driver, total_contents, rating)
     adjust_rating(driver, rating)
     driver.quit()
     print("별점 조정이 완료되었습니다.")
@@ -68,8 +69,8 @@ def move_main_page(my_account: dict, driver: webdriver):
     login_id.send_keys(Keys.ENTER)
 
 
-# 평가한 영화 페이지로 이동
-def move_rating_page(driver: webdriver) -> int:
+# 콘텐츠 평점 페이지로 이동
+def move_rating_page(driver: webdriver, content_idx: int) -> int:
 
     wait = WebDriverWait(driver, 5)
 
@@ -90,41 +91,40 @@ def move_rating_page(driver: webdriver) -> int:
     driver.find_element(
         By.CSS_SELECTOR, 'a.e6k12944.css-1kn1ani.eovgsd00').click()
 
-    # 평가한 영화 개수 확인
+    # 평가한 콘텐츠 개수 확인
     value_span = wait.until(EC.presence_of_element_located(
-        (By.CSS_SELECTOR, 'span.css-rh8g4g.eozj6dy1')))
+        (By.XPATH, f'//*[@id="root"]/div/div[1]/section/div/ul/li[{content_idx}]/div/div[1]/a/h2/span')))
     value = value_span.text
-    total_movies = int(value)
+    total_contents = int(value)
 
-    # 영화 페이지 클릭
-    driver.find_element(
-        By.CSS_SELECTOR, 'h2.css-ksan24.eozj6dy2').click()
+    # 콘텐츠 페이지 클릭
+    value_span.click()
 
-    return total_movies
+    return total_contents
 
 
 def scroll_to_bottom(driver):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
 
-# 변경할 별점을 가진 영화의 url을 파일에 저장
-def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
+# 변경할 별점을 가진 콘텐츠의 url을 파일에 저장
+def save_content_urls(driver: webdriver, total_contents: int, rating: str):
 
-    skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
+    skip_value = '평가함 ★ ' + rating  # 별점을 유지할 콘텐츠의 값
 
-    with open(check_validity.movie_url_output_file, 'a') as file:
-        for i in range(1, total_movies + 1):
+    with open(check_validity.content_url_output_file, 'a') as file:
+        for i in range(1, total_contents + 1):
             xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
             try:
                 rating_element = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, xpath))
                 )
                 rating_text = rating_element.text
-                movie_url_element = driver.find_element(
+                content_url_element = driver.find_element(
                     By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a')
-                movie_url = movie_url_element.get_attribute('href')
+                content_url = content_url_element.get_attribute('href')
                 if skip_value not in rating_text:
-                    file.write(movie_url + '\n')
+                    file.write(content_url + '\n')
                 i += 1
 
             except StaleElementReferenceException:
@@ -136,11 +136,11 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
 # 별점 조정
 def adjust_rating(driver: webdriver, target_rating: str):
 
-    with open(check_validity.movie_url_output_file, 'r') as file:
-        movie_urls = file.readlines()
+    with open(check_validity.content_url_output_file, 'r') as file:
+        content_urls = file.readlines()
 
-    for movie_url in movie_urls:
-        driver.get(movie_url)
+    for content_url in content_urls:
+        driver.get(content_url)
         wait = WebDriverWait(driver, 5)
 
         # 페이지가 완전히 로드될 때까지 대기
@@ -148,6 +148,7 @@ def adjust_rating(driver: webdriver, target_rating: str):
             (By.CSS_SELECTOR, 'section.css-19lmqd7.edz00v813')
         ))
 
+        # 목표 별점 클릭
         modified_target_rating = int(float(target_rating) * 2)
         star_box = driver.find_element(By.CSS_SELECTOR, 'div.e10lmt5b3')
         size = star_box.size

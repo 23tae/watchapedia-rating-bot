@@ -1,30 +1,42 @@
+import utils
+
 import os
 
-movie_url_output_file = "./movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+content_url_output_file = "./content_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
 
 
-def check(arg: str) -> tuple[str, bool]:
-    rating = get_rating(arg)
-    is_save_url = delete_previous_file(movie_url_output_file)
-    return rating, is_save_url
+def check(arg: str) -> tuple[int, str, bool]:
+    content_idx, rating = check_argument(arg)
+    is_save_url = delete_previous_file(content_url_output_file)
+    return content_idx, rating, is_save_url
 
 
-def get_rating(arg: str) -> str:
-    if len(arg) == 2:
-        rating = arg[1]
-        arg_len = len(rating)
-        if arg_len == 1:
-            if '1' <= rating <= '5':
-                return rating + '.0'
-        elif arg_len == 3 and rating[1] == '.':
-            if rating[2] == '0':
-                if '1' <= rating[0] <= '5':
-                    return rating
-            elif rating[2] == '5':
-                if '0' <= rating[0] <= '4':
-                    return rating
-    print('Usage: python3 main.py <rating>\n(rating: 0.5 ~ 5.0 (0.5단위))')
-    raise Exception()
+def check_argument(arg: str) -> tuple[int, str]:
+    error_msg = 'Usage: python3 main.py <type> <rating>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\n'
+    if len(arg) != 3 or arg[1] not in ['m', 't', 'b', 'w']:
+        print(error_msg)
+        raise Exception()
+    content_idx = utils.get_content_index(arg[1])
+    rating = get_rating(arg[2])
+    if rating is None:
+        print(error_msg)
+        raise Exception()
+    return content_idx, rating
+
+
+def get_rating(rating: str) -> str | None:
+    arg_len = len(rating)
+    if arg_len == 1:
+        if '1' <= rating <= '5':
+            return rating + '.0'
+    elif arg_len == 3 and rating[1] == '.':
+        if rating[2] == '0':
+            if '1' <= rating[0] <= '5':
+                return rating
+        elif rating[2] == '5':
+            if '0' <= rating[0] <= '4':
+                return rating
+    return None
 
 
 def delete_previous_file(file_path) -> bool:
