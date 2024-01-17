@@ -15,7 +15,7 @@ def check(arg: str) -> tuple[int, str, int, bool]:
 
 
 def check_argument(arg: str) -> tuple[int, str, int]:
-    error_msg = 'Usage: python3 main.py <type> <rating> <limit>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\tlimit: 1 ~\n'
+    error_msg = 'Usage: python3 main.py <type> <rating> <limit>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\tlimit: 1 이상\n'
     if len(arg) < 3 or arg[1] not in ['m', 't', 'b', 'w']:
         print(error_msg)
         raise Exception()
