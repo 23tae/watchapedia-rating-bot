@@ -148,9 +148,6 @@ def adjust_rating(driver: webdriver, target_rating: str):
             (By.CSS_SELECTOR, 'section.css-19lmqd7.edz00v813')
         ))
 
-        rating_word = wait.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'div.e10lmt5b1 > div.e1iiuhl30')
-        )).text
         modified_target_rating = int(float(target_rating) * 2)
         star_box = driver.find_element(By.CSS_SELECTOR, 'div.e10lmt5b3')
         size = star_box.size
