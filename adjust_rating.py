@@ -16,7 +16,9 @@ import ssl
 
 def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: bool):
     driver = set_options()
-    move_main_page(my_account, driver)
+    if move_main_page(my_account, driver) is False:
+        driver.quit()
+        return
     total_contents = move_rating_page(driver, content_idx)
     if is_save_url:
         save_content_urls(driver, total_contents, rating)
@@ -43,11 +45,11 @@ def set_options():
 
 
 # 왓챠피디아 메인 페이지로 이동
-def move_main_page(my_account: dict, driver: webdriver):
+def move_main_page(my_account: dict, driver: webdriver) -> bool:
     # 페이지 이동
     driver.get("https://pedia.watcha.com/ko-KR/")
 
-    wait = WebDriverWait(driver, 5)
+    wait = WebDriverWait(driver, 3)
 
     # div가 존재하면 닫기 버튼 클릭
     intercepting_div = driver.find_elements(
@@ -68,6 +70,16 @@ def move_main_page(my_account: dict, driver: webdriver):
     login_pwd = driver.find_element(By.CSS_SELECTOR, 'input[name="password"]')
     login_pwd.send_keys(my_account['password'])
     login_id.send_keys(Keys.ENTER)
+
+    # 로그인 성공 여부 확인
+    try:
+        wait.until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, 'div.css-11row1x.e1cn7arl4')))
+    except:
+        print("로그인 성공")
+        return True
+    print("로그인 실패")
+    return False
 
 
 # 콘텐츠 평점 페이지로 이동
