@@ -23,12 +23,9 @@ def run_webdriver(my_account: dict, rating: str):
     driver = set_options()
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
-    try:
-        if total_movies != -1:
-            save_movie_urls(driver, total_movies, rating)
-        adjust_rating(driver, rating)
-    except Exception as e:
-        print(f"Error: {e}")
+    if total_movies != -1:
+        save_movie_urls(driver, total_movies, rating)
+    adjust_rating(driver, rating)
     driver.quit()
 
 
@@ -64,7 +61,7 @@ def move_main_page(my_account: dict, driver: webdriver):
         close_button.click()
 
     login_button = wait.until(EC.element_to_be_clickable(
-        (By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[7]/button')))
+        (By.CSS_SELECTOR, 'button.css-jt7ti-StylelessButton-LoginButton')))
 
     login_button.click()
 
@@ -96,22 +93,22 @@ def move_rating_page(driver: webdriver) -> int:
 
     # 프로필 버튼 클릭
     profile_button = wait.until(EC.element_to_be_clickable(
-        (By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[9]/a/div/div')))
+        (By.CSS_SELECTOR, 'div.css-17jpe4g-ProfilePhotoImage-ProfilePhotoImage')))
     profile_button.click()
 
     # 평가 페이지 클릭
     driver.find_element(
-        By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div/div/section[1]/div/div[3]/a[1]/span[2]').click()
+        By.CSS_SELECTOR, 'a.e6k12944.css-1kn1ani.eovgsd00').click()
 
     # 평가한 영화 개수 확인
     value_span = wait.until(EC.presence_of_element_located(
-        (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]/a/h2/span')))
+        (By.CSS_SELECTOR, 'span.css-rh8g4g.eozj6dy1')))
     value = value_span.text
     total_movies = int(value)
 
     # 영화 페이지 클릭
     driver.find_element(
-        By.XPATH, '//*[@id="root"]/div/div[1]/section/div/ul/li[1]/div/div[1]').click()
+        By.CSS_SELECTOR, 'h2.css-ksan24.eozj6dy2').click()
 
     return total_movies
 
@@ -161,11 +158,11 @@ def adjust_rating(driver: webdriver, rating: str):
 
         # 페이지가 완전히 로드될 때까지 대기
         wait.until(EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section/div[2]/section[2]/div/section')
+            (By.CSS_SELECTOR, 'section.css-19lmqd7.edz00v813')
         ))
 
         rating_word = wait.until(EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div[2]/div/div[1]/div/div[2]/section/div[2]/section[1]/div[1]/div[2]/div')
+            (By.CSS_SELECTOR, 'div.e10lmt5b1 > div.e1iiuhl30')
         )).text
         current_star_class = utils.get_current_class_name(rating_word)
         print(current_star_class)
