@@ -187,7 +187,7 @@ def adjust_rating(driver: webdriver, target_rating: str):
 
         # 일정 시간 대기
         if i % 50 == 0:
-            print(f"콘텐츠 {i}개 평점 조정 완료")
+            print(f"콘텐츠 {i}개 별점 조정 완료")
             time.sleep(5)
 
     print("별점 조정 완료")
