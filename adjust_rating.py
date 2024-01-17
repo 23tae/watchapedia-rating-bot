@@ -1,8 +1,6 @@
 import check_validity
-import utils
 
 from webdriver_manager.chrome import ChromeDriverManager
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -11,22 +9,19 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
-import urllib.request
-import ssl
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+import ssl
 
-output_file = utils.movie_urls_filename  # 별점 조정할 영화의 url을 저장할 파일
 
-
-def run_webdriver(my_account: dict, rating: str):
+def run_webdriver(my_account: dict, rating: str, is_save_url: bool):
     driver = set_options()
     move_main_page(my_account, driver)
     total_movies = move_rating_page(driver)
-    if total_movies != -1:
+    if is_save_url:
         save_movie_urls(driver, total_movies, rating)
     adjust_rating(driver, rating)
     driver.quit()
+    print("별점 조정이 완료되었습니다.")
 
 
 def set_options():
@@ -75,11 +70,6 @@ def move_main_page(my_account: dict, driver: webdriver):
 
 # 평가한 영화 페이지로 이동
 def move_rating_page(driver: webdriver) -> int:
-    global output_file
-
-    if check_validity.delete_previous_file(output_file) is False:
-        return -1
-    check_validity.create_dir_if_not_exists(output_file)
 
     wait = WebDriverWait(driver, 5)
 
@@ -120,10 +110,9 @@ def scroll_to_bottom(driver):
 # 변경할 별점을 가진 영화의 url을 파일에 저장
 def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
 
-    global output_file
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 영화의 값
 
-    with open(output_file, 'a') as file:
+    with open(check_validity.movie_url_output_file, 'a') as file:
         for i in range(1, total_movies + 1):
             xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
             try:
@@ -147,7 +136,7 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
 # 별점 조정
 def adjust_rating(driver: webdriver, target_rating: str):
 
-    with open(utils.movie_urls_filename, 'r') as file:
+    with open(check_validity.movie_url_output_file, 'r') as file:
         movie_urls = file.readlines()
 
     for movie_url in movie_urls:

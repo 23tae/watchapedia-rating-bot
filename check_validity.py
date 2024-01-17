@@ -1,5 +1,13 @@
 import os
 
+movie_url_output_file = "./movie_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+
+
+def check(arg: str) -> tuple[str, bool]:
+    rating = get_rating(arg)
+    is_save_url = delete_previous_file(movie_url_output_file)
+    return rating, is_save_url
+
 
 def get_rating(arg: str) -> str:
     if len(arg) == 2:
@@ -23,7 +31,7 @@ def delete_previous_file(file_path) -> bool:
     try:
         if os.path.exists(file_path):
             user_input = input(
-                f"파일 {file_path}이(가) 존재합니다. 삭제하시겠습니까? (y/N): ").lower()
+                f"파일 {file_path}이(가) 존재합니다. 다시 생성하시겠습니까? (y/N): ").lower()
 
             if user_input == 'y':
                 os.remove(file_path)
@@ -33,9 +41,11 @@ def delete_previous_file(file_path) -> bool:
                 print("삭제를 취소했습니다.")
                 return False
         else:
+            create_dir_if_not_exists(file_path)
             return True
     except Exception as e:
         print(f"Error: {e}")
+
 
 def create_dir_if_not_exists(file_path):
     dir_path = os.path.dirname(file_path)

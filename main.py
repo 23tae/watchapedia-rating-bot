@@ -6,9 +6,9 @@ import sys
 
 
 def main(arg: str):
-    rating = check_validity.get_rating(arg)
+    rating, is_save_url = check_validity.check(arg)
     my_account = user_info.get_account()
-    adjust_rating.run_webdriver(my_account, rating)
+    adjust_rating.run_webdriver(my_account, rating, is_save_url)
 
 
 if __name__ == '__main__':
