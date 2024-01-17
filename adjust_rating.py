@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
 import ssl
+import time
 
 
 def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: bool):
@@ -19,8 +20,8 @@ def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: 
     if move_main_page(my_account, driver) is False:
         driver.quit()
         return
-    total_contents = move_rating_page(driver, content_idx)
     if is_save_url:
+        total_contents = move_rating_page(driver, content_idx)
         save_content_urls(driver, total_contents, rating)
     adjust_rating(driver, rating)
     driver.quit()
@@ -33,13 +34,14 @@ def set_options():
     chrome_options.add_experimental_option("detach", True)
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
-    chrome_options.add_argument('--headless=new')
+    # chrome_options.add_argument('--headless=new')
+    chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument('incognito')
     chrome_options.add_experimental_option(
         "excludeSwitches", ["enable-logging"])
     Service(executable_path=ChromeDriverManager().install())
     driver = webdriver.Chrome(options=chrome_options)
-    driver.implicitly_wait(2)
+    # driver.implicitly_wait(2)
     return driver
 
 
@@ -77,6 +79,7 @@ def move_main_page(my_account: dict, driver: webdriver) -> bool:
     except:
         print("로그인 성공")
         return True
+
     print("로그인 실패")
     return False
 
@@ -95,15 +98,17 @@ def move_rating_page(driver: webdriver, content_idx: int) -> int:
         close_button.click()
 
     # 프로필 버튼 클릭
-    partial_progile_class_name = "ProfilePhotoImage-ProfilePhotoImage"
+    partial_profile_class_name = "ProfilePhotoImage-ProfilePhotoImage"
 
     profile_button = wait.until(EC.element_to_be_clickable(
-        (By.CSS_SELECTOR, f'div[class*="{partial_progile_class_name}"]')))
+        (By.CSS_SELECTOR, f'div[class*="{partial_profile_class_name}"]')))
     profile_button.click()
 
     # 평가 페이지 클릭
-    driver.find_element(
-        By.CSS_SELECTOR, 'a.e6k12944.css-1kn1ani.eovgsd00').click()
+    wait.until(EC.presence_of_element_located(
+        (By.XPATH,
+         '//*[@id="root"]/div/div[1]/section/div/div/div/section[1]/div/div[3]/a[1]')
+    )).click()
 
     # 평가한 콘텐츠 개수 확인
     value_span = wait.until(EC.presence_of_element_located(
@@ -142,22 +147,23 @@ def save_content_urls(driver: webdriver, total_contents: int, rating: str):
                 if skip_value not in rating_text:
                     file.write(content_url + '\n')
                 i += 1
-
             except StaleElementReferenceException:
                 continue
 
             scroll_to_bottom(driver)
+
     print("콘텐츠 정보 저장 완료")
 
 
 # 별점 조정
 def adjust_rating(driver: webdriver, target_rating: str):
+
     print("별점 조정 시작")
 
     with open(check_validity.content_url_output_file, 'r') as file:
         content_urls = file.readlines()
 
-    for content_url in content_urls:
+    for content_url, i in zip(content_urls, range(1, len(content_urls) + 1)):
         driver.get(content_url)
         wait = WebDriverWait(driver, 5)
 
@@ -174,5 +180,10 @@ def adjust_rating(driver: webdriver, target_rating: str):
         ac.move_to_element_with_offset(
             star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
         ac.perform()
+
+        # 일정 시간 대기
+        if i % 50 == 0:
+            print(f"콘텐츠 {i}개 평점 조정 완료")
+            time.sleep(5)
 
     print("별점 조정 완료")
