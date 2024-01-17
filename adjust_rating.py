@@ -24,7 +24,6 @@ def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: 
         save_content_urls(driver, total_contents, rating)
     adjust_rating(driver, rating)
     driver.quit()
-    print("별점 조정이 완료되었습니다.")
 
 
 def set_options():
@@ -125,6 +124,8 @@ def save_content_urls(driver: webdriver, total_contents: int, rating: str):
 
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 콘텐츠의 값
 
+    print("콘텐츠 정보 저장 시작")
+
     with open(check_validity.content_url_output_file, 'a') as file:
         for i in range(1, total_contents + 1):
             xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/section/div[1]/div/ul/li[{i}]/a/div[2]/div[2]'
@@ -144,10 +145,12 @@ def save_content_urls(driver: webdriver, total_contents: int, rating: str):
                 continue
 
             scroll_to_bottom(driver)
+    print("콘텐츠 정보 저장 완료")
 
 
 # 별점 조정
 def adjust_rating(driver: webdriver, target_rating: str):
+    print("별점 조정 시작")
 
     with open(check_validity.content_url_output_file, 'r') as file:
         content_urls = file.readlines()
@@ -169,3 +172,5 @@ def adjust_rating(driver: webdriver, target_rating: str):
         ac.move_to_element_with_offset(
             star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
         ac.perform()
+
+    print("별점 조정 완료")
