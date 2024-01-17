@@ -145,9 +145,7 @@ def save_movie_urls(driver: webdriver, total_movies: int, rating: str):
 
 
 # 별점 조정
-def adjust_rating(driver: webdriver, rating: str):
-
-    target_rating_class = utils.get_target_class_name(rating)
+def adjust_rating(driver: webdriver, target_rating: str):
 
     with open(utils.movie_urls_filename, 'r') as file:
         movie_urls = file.readlines()
@@ -164,11 +162,10 @@ def adjust_rating(driver: webdriver, rating: str):
         rating_word = wait.until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, 'div.e10lmt5b1 > div.e1iiuhl30')
         )).text
-        current_star_class = utils.get_current_class_name(rating_word)
-        print(current_star_class)
-        continue
-        # 해당 별점이 클릭 가능할 때까지 대기한 후 클릭
-        star_xpath = f'//div[@class="{target_rating_class}"]'
-        star_element = wait.until(
-            EC.element_to_be_clickable((By.XPATH, star_xpath)))
-        star_element.click()
+        modified_target_rating = int(float(target_rating) * 2)
+        star_box = driver.find_element(By.CSS_SELECTOR, 'div.e10lmt5b3')
+        size = star_box.size
+        ac = ActionChains(driver)
+        ac.move_to_element_with_offset(
+            star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
+        ac.perform()
