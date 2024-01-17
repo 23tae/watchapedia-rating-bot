@@ -95,8 +95,10 @@ def move_rating_page(driver: webdriver, content_idx: int) -> int:
         close_button.click()
 
     # 프로필 버튼 클릭
+    partial_progile_class_name = "ProfilePhotoImage-ProfilePhotoImage"
+
     profile_button = wait.until(EC.element_to_be_clickable(
-        (By.CSS_SELECTOR, 'div.css-17jpe4g-ProfilePhotoImage-ProfilePhotoImage')))
+        (By.CSS_SELECTOR, f'div[class*="{partial_progile_class_name}"]')))
     profile_button.click()
 
     # 평가 페이지 클릭
