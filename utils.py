@@ -1,18 +1,6 @@
 import os
 
 
-def get_content_value(initial: str) -> str:
-    if initial == 'm':
-        return '영화'
-    elif initial == 't':
-        return 'TV 프로그램'
-    elif initial == 'b':
-        return '책'
-    elif initial == 'w':
-        return '웹툰'
-    return None
-
-
 def get_content_index(initial: str) -> int:
     if initial == 'm':
         return 1
