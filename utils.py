@@ -1,22 +1,37 @@
-def get_content_value(str) -> str:
-    if str == 'm':
+import os
+
+
+def get_content_value(initial: str) -> str:
+    if initial == 'm':
         return '영화'
-    elif str == 't':
+    elif initial == 't':
         return 'TV 프로그램'
-    elif str == 'b':
+    elif initial == 'b':
         return '책'
-    elif str == 'w':
+    elif initial == 'w':
         return '웹툰'
     return None
 
 
-def get_content_index(str) -> int:
-    if str == 'm':
+def get_content_index(initial: str) -> int:
+    if initial == 'm':
         return 1
-    elif str == 't':
+    elif initial == 't':
         return 2
-    elif str == 'b':
+    elif initial == 'b':
         return 3
-    elif str == 'w':
+    elif initial == 'w':
         return 4
     return None
+
+
+def get_url_output_filename(idx: int) -> str:
+    if idx == 1:
+        filename = 'movie_urls.txt'
+    elif idx == 2:
+        filename = 'tv_program_urls.txt'
+    elif idx == 3:
+        filename = 'book_urls.txt'
+    elif idx == 4:
+        filename = 'webtoon_urls.txt'
+    return os.path.join('./result', filename)

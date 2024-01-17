@@ -2,11 +2,14 @@ import utils
 
 import os
 
-content_url_output_file = "./content_urls.txt"  # 별점 조정할 영화의 url을 저장할 파일
+content_url_output_file = ""  # 별점 조정할 영화의 url을 저장할 파일
 
 
 def check(arg: str) -> tuple[int, str, bool]:
+    global content_url_output_file
+
     content_idx, rating = check_argument(arg)
+    content_url_output_file = utils.get_url_output_filename(content_idx)
     is_save_url = delete_previous_file(content_url_output_file)
     return content_idx, rating, is_save_url
 
