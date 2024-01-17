@@ -15,14 +15,14 @@ import ssl
 import time
 
 
-def run_webdriver(my_account: dict, content_idx: int, rating: str, is_save_url: bool):
+def run_webdriver(my_account: dict, content_idx: int, rating: str, limit: int, is_save_url: bool):
     driver = set_options()
     if move_main_page(my_account, driver) is False:
         driver.quit()
         return
     if is_save_url:
         total_contents = move_rating_page(driver, content_idx)
-        save_content_urls(driver, total_contents, rating)
+        save_content_urls(driver, total_contents, rating, limit)
     adjust_rating(driver, rating)
     driver.quit()
 
@@ -127,11 +127,13 @@ def scroll_to_bottom(driver):
 
 
 # 변경할 별점을 가진 콘텐츠의 url을 파일에 저장
-def save_content_urls(driver: webdriver, total_contents: int, rating: str):
+def save_content_urls(driver: webdriver, total_contents: int, rating: str, limit: int):
 
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 콘텐츠의 값
 
     print("콘텐츠 정보 저장 시작")
+
+    j = 0
 
     with open(check_validity.content_url_output_file, 'a') as file:
         for i in range(1, total_contents + 1):
@@ -146,10 +148,12 @@ def save_content_urls(driver: webdriver, total_contents: int, rating: str):
                 content_url = content_url_element.get_attribute('href')
                 if skip_value not in rating_text:
                     file.write(content_url + '\n')
+                    j += 1
                 i += 1
             except StaleElementReferenceException:
                 continue
-
+            if limit != -1 and j >= limit:
+                break
             scroll_to_bottom(driver)
 
     print("콘텐츠 정보 저장 완료")

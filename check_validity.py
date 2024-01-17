@@ -5,18 +5,18 @@ import os
 content_url_output_file = ""  # 별점 조정할 영화의 url을 저장할 파일
 
 
-def check(arg: str) -> tuple[int, str, bool]:
+def check(arg: str) -> tuple[int, str, int, bool]:
     global content_url_output_file
 
-    content_idx, rating = check_argument(arg)
+    content_idx, rating, limit = check_argument(arg)
     content_url_output_file = utils.get_url_output_filename(content_idx)
     is_save_url = delete_previous_file(content_url_output_file)
-    return content_idx, rating, is_save_url
+    return content_idx, rating, limit, is_save_url
 
 
-def check_argument(arg: str) -> tuple[int, str]:
-    error_msg = 'Usage: python3 main.py <type> <rating>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\n'
-    if len(arg) != 3 or arg[1] not in ['m', 't', 'b', 'w']:
+def check_argument(arg: str) -> tuple[int, str, int]:
+    error_msg = 'Usage: python3 main.py <type> <rating> <limit>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\tlimit: 1 ~\n'
+    if len(arg) < 3 or arg[1] not in ['m', 't', 'b', 'w']:
         print(error_msg)
         raise Exception()
     content_idx = utils.get_content_index(arg[1])
@@ -24,7 +24,14 @@ def check_argument(arg: str) -> tuple[int, str]:
     if rating is None:
         print(error_msg)
         raise Exception()
-    return content_idx, rating
+    if len(arg) == 3:
+        limit = -1
+    else:
+        limit = int(arg[3])
+        if limit <= 0:
+            print(error_msg)
+            raise Exception()
+    return content_idx, rating, limit
 
 
 def get_rating(rating: str) -> str | None:
