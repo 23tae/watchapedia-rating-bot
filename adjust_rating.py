@@ -1,5 +1,4 @@
 import check_validity
-import utils
 
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
@@ -9,21 +8,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 import ssl
 import time
+from stopwatch import Stopwatch
+
+repetition_limit = 40
 
 
-def run_webdriver(my_account: dict, content_idx: int, rating: str, limit: int, is_save_url: bool):
+def run_webdriver(my_account: dict, content_idx: int, rating: str, limit: int, is_save_url: bool, t: Stopwatch):
     driver = set_options()
     if move_main_page(my_account, driver) is False:
         driver.quit()
         return
     if is_save_url:
         total_contents = move_rating_page(driver, content_idx)
-        save_content_urls(driver, total_contents, rating, limit)
-    adjust_rating(driver, rating)
+        save_content_urls(driver, total_contents, rating, limit, t)
+    adjust_rating(driver, rating, t)
     driver.quit()
 
 
@@ -65,6 +67,7 @@ def move_main_page(my_account: dict, driver: webdriver) -> bool:
     login_button.click()
 
     # 왓챠피디아 로그인
+    print("1. 왓챠피디아 로그인: ", end='', flush=True)
     login_id = driver.find_element(By.CSS_SELECTOR, 'input[name="email"]')
     login_id.send_keys(my_account['username'])
     login_pwd = driver.find_element(By.CSS_SELECTOR, 'input[name="password"]')
@@ -76,10 +79,10 @@ def move_main_page(my_account: dict, driver: webdriver) -> bool:
         wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'div.css-11row1x.e1cn7arl4')))
     except:
-        print("로그인 성공")
+        print("성공")
         return True
 
-    print("로그인 실패")
+    print("실패")
     return False
 
 
@@ -126,12 +129,12 @@ def scroll_to_bottom(driver):
 
 
 # 변경할 별점을 가진 콘텐츠의 url을 파일에 저장
-def save_content_urls(driver: webdriver, total_contents: int, rating: str, limit: int):
+def save_content_urls(driver: webdriver, total_contents: int, rating: str, limit: int, t: Stopwatch):
 
     skip_value = '평가함 ★ ' + rating  # 별점을 유지할 콘텐츠의 값
 
-    print("콘텐츠 정보 저장 시작")
-
+    print("2. 콘텐츠 정보 저장")
+    t.tick()
     j = 0
 
     with open(check_validity.content_url_output_file, 'a') as file:
@@ -155,38 +158,48 @@ def save_content_urls(driver: webdriver, total_contents: int, rating: str, limit
                 break
             scroll_to_bottom(driver)
 
-    print("콘텐츠 정보 저장 완료")
+    print(f"콘텐츠 정보 저장 완료. 소요시간: {t.tick('콘텐츠 정보 저장'):.2f}s")
 
 
 # 별점 조정
-def adjust_rating(driver: webdriver, target_rating: str):
+def adjust_rating(driver: webdriver, target_rating: str, t: Stopwatch):
 
-    print("별점 조정 시작")
+    print("3. 별점 조정")
+    t2 = Stopwatch()
+    t.tick()
+    t2.start()
 
     with open(check_validity.content_url_output_file, 'r') as file:
         content_urls = file.readlines()
 
-    for content_url, i in zip(content_urls, range(1, len(content_urls) + 1)):
-        driver.get(content_url)
-        wait = WebDriverWait(driver, 5)
+    try:
+        for content_url, i in zip(content_urls, range(1, len(content_urls) + 1)):
+            driver.get(content_url)
+            wait = WebDriverWait(driver, 5)
 
-        # 페이지가 완전히 로드될 때까지 대기
-        wait.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'section.css-19lmqd7.edz00v813')
-        ))
+            # 페이지가 완전히 로드될 때까지 대기
+            wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'section.css-19lmqd7.edz00v813')
+            ))
 
-        # 목표 별점 클릭
-        modified_target_rating = int(float(target_rating) * 2)
-        star_box = driver.find_element(By.CSS_SELECTOR, 'div.e10lmt5b3')
-        size = star_box.size
-        ac = ActionChains(driver)
-        ac.move_to_element_with_offset(
-            star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
-        ac.perform()
+            # 목표 별점 클릭
+            modified_target_rating = int(float(target_rating) * 2)
+            star_box = driver.find_element(By.CSS_SELECTOR, 'div.e10lmt5b3')
+            size = star_box.size
+            ac = ActionChains(driver)
+            ac.move_to_element_with_offset(
+                star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
+            ac.perform()
 
-        # 일정 시간 대기
-        if i % 50 == 0:
-            print(f"콘텐츠 {i}개 별점 조정 완료")
-            time.sleep(5)
+            # 일정 시간 대기
+            if i % repetition_limit == 0:
+                print(
+                    f"{repetition_limit}개 조정 완료(현재 {i}번). 소요시간: {t2.tick():.2f}s")
+                time.sleep(30)
+                t2.tick()
 
-    print("별점 조정 완료")
+    except TimeoutException as e:
+        print(f'{i}번({content_url}) 시간초과. 소요시간: {t.tick("별점 조정"):.2f}s')
+        print(e)
+
+    print(f"별점 조정 완료. 소요시간: {t.tick('별점 조정'):.2f}s")
