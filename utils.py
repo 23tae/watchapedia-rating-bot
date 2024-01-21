@@ -13,13 +13,31 @@ def get_content_index(initial: str) -> int:
     return None
 
 
-def get_url_output_filename(idx: int) -> str:
+def get_content_name(idx: int) -> str:
     if idx == 1:
-        filename = 'movie_urls.txt'
+        content_name = 'movies'
     elif idx == 2:
-        filename = 'tv_program_urls.txt'
+        content_name = 'tv_seasons'
     elif idx == 3:
-        filename = 'book_urls.txt'
+        content_name = 'books'
     elif idx == 4:
-        filename = 'webtoon_urls.txt'
-    return os.path.join('./result', filename)
+        content_name = 'webtoons'
+    else:
+        content_name = None
+    return content_name
+
+
+def get_url_output_filename(idx: int) -> str:
+    content_name = get_content_name(idx)
+    return os.path.join('./result', f'{content_name}_urls.txt')
+
+
+def get_rating_index(rating: str) -> int:
+    return 11 - int(float(rating) * 2)
+
+
+def get_rating_page(profile_url: str, idx: int) -> str:
+    content_name = get_content_name(idx)
+    rating_page_url = os.path.join(
+        profile_url, f'contents/{content_name}/ratings')
+    return rating_page_url
