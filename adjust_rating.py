@@ -14,9 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 import ssl
 import time
 from stopwatch import Stopwatch
-
-
-repetition_limit = 40
+import urllib.parse
 
 
 def run_webdriver(my_account: dict, content_idx: int, rating: str, limit: int, is_save_url: bool, t: Stopwatch):
@@ -25,9 +23,9 @@ def run_webdriver(my_account: dict, content_idx: int, rating: str, limit: int, i
         driver.quit()
         return
     if is_save_url:
-        move_rating_page(driver, content_idx)
-        save_content_urls(driver, rating, limit, t)
-    adjust_rating(driver, rating, t)
+        page_url = get_rating_page(driver, content_idx)
+        save_content_urls(driver, rating, limit, page_url, t)
+    adjust_rating(driver, rating, limit, t)
     driver.quit()
 
 
@@ -38,7 +36,7 @@ def set_options():
     chrome_options.add_experimental_option("detach", True)
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36")
-    chrome_options.add_argument('--headless=new')
+    # chrome_options.add_argument('--headless=new')
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument('incognito')
     chrome_options.add_experimental_option(
@@ -89,24 +87,14 @@ def move_main_page(my_account: dict, driver: webdriver) -> bool:
     return False
 
 
-# 별점 보관함으로 이동
-def move_rating_page(driver: webdriver, content_idx: int):
-
-    wait = WebDriverWait(driver, 3)
+# 별점 보관함 url 반환
+def get_rating_page(driver: webdriver, content_idx: int) -> str:
     profile_button = driver.find_element(
         By.XPATH, '//*[@id="root"]/div/div[1]/header[1]/nav/div/div/ul/li[9]/a')
     profile_url = profile_button.get_attribute('href')
     rating_page_url = utils.get_rating_page(profile_url, content_idx)
-
-    # 별점 보관함으로 이동
-    driver.get(rating_page_url)
-
-    # 별점 탭 클릭
-    rating_tab = wait.until(EC.presence_of_element_located(
-        (By.XPATH, '//*[@id="root"]/div/div[1]/section/div/div/ul/li[2]')))
-    rating_tab.click()
-
     driver.implicitly_wait(3)
+    return rating_page_url
 
 
 def scroll_to_bottom(driver):
@@ -120,51 +108,55 @@ def scroll_to_right(driver, element):
 
 # 2. 콘텐츠 정보 저장
 # 변경할 별점을 가진 콘텐츠의 url을 파일에 저장
-def save_content_urls(driver: webdriver, rating: str, limit: int, t: Stopwatch):
+def save_content_urls(driver: webdriver, rating: str, limit: int, page_url: str, t: Stopwatch):
 
     print("2. 콘텐츠 정보 저장")
     t.tick()
     count = 0
-    wait = WebDriverWait(driver, 5)
+    wait = WebDriverWait(driver, 2)
     rating_idx = utils.get_rating_index(rating)
     with open(check_validity.content_url_output_file, 'a') as file:
         for i in range(1, 11):  # 점수별 콘텐츠
             if i == rating_idx:
                 continue
-            total_contents_str = driver.find_element(
-                By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[2]/section/section[{i}]/div[1]/div/header/span').text
-            if len(total_contents_str) == 0:  # 해당 점수의 콘텐츠가 없는 경우
+            current_rating_idx = 11 - i
+            current_rating_page_url = urllib.parse.urljoin(
+                page_url, str(current_rating_idx))
+            driver.get(current_rating_page_url)
+            try:
+                driver.find_element(
+                    By.XPATH, '//*[@id="root"]/div/div[1]/section/section/div[1]/div/div/section/div/div')
                 continue
-            total_contents = int(total_contents_str)
-            more_button = driver.find_element(
-                By.XPATH, f'//*[@id="root"]/div/div[1]/section/section/div[2]/section/section[{i}]/div[1]/div/header/div/div/a')
-            more_button.click()
-            for j in range(1, total_contents + 1):
+            except NoSuchElementException:
+                pass
+            j = 1
+            while True:
                 try:
                     xpath = f'//*[@id="root"]/div/div[1]/section/section/div[1]/div/div/ul/li[{j}]/a'
+                    j += 1
                     url_element = wait.until(
                         EC.presence_of_element_located((By.XPATH, xpath)))
                     content_url = url_element.get_attribute('href')
                     file.write(content_url + '\n')
                     count += 1
-                except StaleElementReferenceException:
-                    continue
+                except TimeoutException:
+                    break
                 if limit != -1 and count >= limit:
                     return
                 scroll_to_bottom(driver)
-            driver.back()
         scroll_to_bottom(driver)
 
     print(f"콘텐츠 정보 저장 완료. 소요시간: {t.tick('콘텐츠 정보 저장'):.2f}s")
 
 
 # 3. 별점 조정
-def adjust_rating(driver: webdriver, target_rating: str, t: Stopwatch):
+def adjust_rating(driver: webdriver, target_rating: str, limit: int, t: Stopwatch):
 
     print("3. 별점 조정")
     t2 = Stopwatch()
     t.tick()
     t2.start()
+    repetition_limit = 5
 
     with open(check_validity.content_url_output_file, 'r') as file:
         content_urls = file.readlines()
@@ -188,15 +180,22 @@ def adjust_rating(driver: webdriver, target_rating: str, t: Stopwatch):
                 star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
             ac.perform()
 
+            if limit != -1 and i >= limit:
+                break
+
             # 일정 시간 대기
             if i % repetition_limit == 0:
                 print(
                     f"{repetition_limit}개 조정 완료(현재 {i}번). 소요시간: {t2.tick():.2f}s")
-                time.sleep(30)
+                print("대기중...", end='\r', flush=True)
+                time.sleep(repetition_limit)
                 t2.tick()
+                print("조정 재개", end='\r', flush=True)
+            continue
 
     except TimeoutException as e:
         print(f'{i}번({content_url}) 시간초과. 소요시간: {t.tick("별점 조정"):.2f}s')
         print(e)
+        return
 
     print(f"별점 조정 완료. 소요시간: {t.tick('별점 조정'):.2f}s")
