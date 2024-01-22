@@ -141,7 +141,7 @@ def save_content_urls(driver: webdriver, rating: str, limit: int, page_url: str,
                     count += 1
                 except TimeoutException:
                     break
-                if limit != -1 and count >= limit:
+                if count >= limit:
                     return
                 scroll_to_bottom(driver)
         scroll_to_bottom(driver)
@@ -180,7 +180,7 @@ def adjust_rating(driver: webdriver, target_rating: str, limit: int, t: Stopwatc
                 star_box, (size.get('width') / 10) * (modified_target_rating - 5.5), 0).click()
             ac.perform()
 
-            if limit != -1 and i >= limit:
+            if i >= limit:
                 break
 
             # 일정 시간 대기

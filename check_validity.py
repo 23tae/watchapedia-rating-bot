@@ -3,6 +3,7 @@ import utils
 import os
 
 content_url_output_file = ""  # 별점 조정할 영화의 url을 저장할 파일
+default_limit = 50
 
 
 def check(arg: str) -> tuple[int, str, int, bool]:
@@ -15,7 +16,7 @@ def check(arg: str) -> tuple[int, str, int, bool]:
 
 
 def check_argument(arg: str) -> tuple[int, str, int]:
-    error_msg = 'Usage: python3 main.py <type> <rating> <limit>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5 ~ 5.0 (0.5단위))\tlimit: 1 이상\n'
+    error_msg = 'Usage: python3 main.py <type> <rating> <limit>\n(type: m(영화), t(TV 프로그램), b(책), w(웹툰)\trating: 0.5~5.0(0.5단위))\tlimit: 1~50\n'
     if len(arg) < 3 or arg[1] not in ['m', 't', 'b', 'w']:
         print(error_msg)
         raise Exception()
@@ -25,10 +26,10 @@ def check_argument(arg: str) -> tuple[int, str, int]:
         print(error_msg)
         raise Exception()
     if len(arg) == 3:
-        limit = -1
+        limit = default_limit
     else:
         limit = int(arg[3])
-        if limit <= 0:
+        if limit <= 0 or limit > default_limit:
             print(error_msg)
             raise Exception()
     return content_idx, rating, limit
