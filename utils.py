@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 
 
 def get_content_index(initial: str) -> int:
@@ -37,7 +38,9 @@ def get_rating_index(rating: str) -> int:
 
 
 def get_rating_page(profile_url: str, idx: int) -> str:
+    if not profile_url.endswith('/'):
+        profile_url += '/'
     content_name = get_content_name(idx)
-    rating_page_url = os.path.join(
-        profile_url, f'contents/{content_name}/ratings')
+    rating_page_url = urllib.parse.urljoin(
+        profile_url, f'contents/{content_name}/ratings/')
     return rating_page_url
